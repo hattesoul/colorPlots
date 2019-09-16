@@ -49,8 +49,6 @@ object <- readRDS("assets/object_06_compressed.rds")
 nms <- c("Library", "Patient", "Condition", "Total UMI", "Unique features", "(X) Log counts", paste(sort(rowData(object)["symbol"][[1]])))
 myOpacity <- NULL
 
-cat("BEGIN\n")
-
 ui <- fluidPage(
   tags$head(tags$script('
         var dimension = [0, 0];
