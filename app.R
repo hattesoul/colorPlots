@@ -42,8 +42,7 @@ options(shiny.maxRequestSize = 500*1024^2)
 
 # load data object
 # object <- NULL
-object <- readRDS("assets/object_06_compressed.rds")
-# saveRDS(object, glue("assets/object_06_compressed.rds"))
+object <- readRDS("assets/object_07_dim_compressed_norm_mnn_UMAP_A.rds")
 
 # data(diamonds, package = "ggplot2")
 nms <- c("Library", "Patient", "Condition", "Total UMI", "Unique features", "(X) Log counts", paste(sort(rowData(object)["symbol"][[1]])))
@@ -98,16 +97,16 @@ server <- function(input, output) {
 
       # set colors
       if(match(input$color, nms) > 6) {
-        myColor <- assay(object, "umi")[match(input$color, as.list(rowData(object)["symbol"])[[1]]), ]
-        myOpacity <- ifelse(assay(object, "umi")[match(input$color, as.list(rowData(object)["symbol"])[[1]]), ] != 0, 0.6, 0.05)
+        myColor <- assay(object, "counts")[match(input$color, as.list(rowData(object)["symbol"])[[1]]), ]
+        myOpacity <- ifelse(assay(object, "counts")[match(input$color, as.list(rowData(object)["symbol"])[[1]]), ] != 0, 0.6, 0.05)
       } else {
-        myOpacity <- ifelse(as.list(colData(object)[match("total_umi", names(colData(object)))])[[1]] != 0, 0.6, 0.05)
+        myOpacity <- ifelse(as.list(colData(object)[match("total_counts", names(colData(object)))])[[1]] != 0, 0.6, 0.05)
         if(match(input$color, nms) == 4) {
-          myColor <- as.list(colData(object)[match("total_umi", names(colData(object)))])[[1]]
+          myColor <- as.list(colData(object)[match("total_counts", names(colData(object)))])[[1]]
         } else if(match(input$color, nms) == 5) {
-          myColor <- as.list(colData(object)[match("total_features_by_umi", names(colData(object)))])[[1]]
+          myColor <- as.list(colData(object)[match("total_features_by_counts", names(colData(object)))])[[1]]
         } else if(match(input$color, nms) == 6) {
-          myColor <- colSums(assay(object, "logcounts"))
+          myColor <- colSums(assay(object, "normcounts"))
         } else {
           myColor <- as.list(colData(object)[match(input$color, names(colData(object)))])[[1]]
         }
@@ -118,7 +117,7 @@ server <- function(input, output) {
   
       p <- plot_ly()
       
-      for (i in 1:length(plotNames)) {
+      for (i in 2:length(plotNames)) {
         currentParameters = strsplit(plotNames[i], "_")
         myParameterName1 <- NULL
         myParameterName2 <- NULL
@@ -138,10 +137,10 @@ server <- function(input, output) {
         ylabel <- list(title = glue(myParameterName1, ": ", myParameterValue1))
         
         # p <- plot_ly(alpha = 0.6, x = reducedDim(object, plotNames[i])[, 1], y = reducedDim(object, plotNames[i])[, 2], type = "scattergl", mode = "markers", color = myColor, legendgroup = myColor, text = myColor, marker = list(opacity = myOpacity, colorscale = "Viridis", reversescale = TRUE, showscale = FALSE), showlegend = ifelse(i == 1, TRUE, FALSE), height = round((as.numeric(input$dimension[2]) * 0.95))) %>%
-        p <- plot_ly(alpha = 0.6, x = reducedDim(object, plotNames[i])[, 1], y = reducedDim(object, plotNames[i])[, 2], type = "scattergl", mode = "markers", color = myColor, legendgroup = myColor, text = myColor, colorbar = NULL, marker = list(opacity = myOpacity, reversescale = TRUE, showscale = ifelse(i == 1, FALSE, FALSE)), showlegend = ifelse(i == 1, TRUE, FALSE), height = round((as.numeric(input$dimension[2]) * 0.95))) %>%
+        p <- plot_ly(alpha = 0.6, x = reducedDim(object, plotNames[i])[, 1], y = reducedDim(object, plotNames[i])[, 2], type = "scattergl", mode = "markers", color = myColor, legendgroup = myColor, text = myColor, colorbar = NULL, marker = list(opacity = myOpacity, reversescale = TRUE, showscale = ifelse(i == 1, FALSE, FALSE)), showlegend = ifelse(i == 2, TRUE, FALSE), height = round((as.numeric(input$dimension[2]) * 0.95))) %>%
           layout(title = "", xaxis = xlabel, yaxis = ylabel)
   
-        plotListUMAP2D[[i]] <- p
+        plotListUMAP2D[[i - 1]] <- p
       }
       # p
       plotsUMAP2D <- subplot(plotListUMAP2D, nrows = 3, titleX = TRUE, titleY = TRUE, shareX = TRUE, shareY = TRUE) %>%
