@@ -42,32 +42,35 @@ options(shiny.maxRequestSize = 500*1024^2)
 
 # load data object
 # object <- NULL
-object <- readRDS("assets/object_07_dim_compressed_norm_mnn_UMAP_A.rds")
+object <- readRDS("assets/object_07_dim_reduced_log_mnn_UMAP_C.rds")
 
 # data(diamonds, package = "ggplot2")
-nms <- c("Library", "Patient", "Condition", "Total UMI", "Unique features", "(X) Log counts", paste(sort(rowData(object)["symbol"][[1]])))
+colorList <- c("Library", "Patient", "Condition", "Total UMI", "Unique features", "(X) Log counts", paste(sort(rowData(object)["symbol"][[1]])))
+redDimList <- reducedDimNames(object)
 myOpacity <- NULL
 
 ui <- fluidPage(
   tags$head(tags$script('
-        var dimension = [0, 0];
-        $(document).on("shiny:connected", function(e) {
-          dimension[0] = window.innerWidth;
-          dimension[1] = window.innerHeight;
-          Shiny.onInputChange("dimension", dimension);
-        });
-        $(window).resize(function(e) {
-           dimension[0] = window.innerWidth;
-           dimension[1] = window.innerHeight;
-           Shiny.onInputChange("dimension", dimension);
-        });
-      ')),
+    var dimension = [0, 0];
+    $(document).on("shiny:connected", function(e) {
+      dimension[0] = window.innerWidth;
+      dimension[1] = window.innerHeight;
+      Shiny.onInputChange("dimension", dimension);
+    });
+    $(window).resize(function(e) {
+       dimension[0] = window.innerWidth;
+       dimension[1] = window.innerHeight;
+       Shiny.onInputChange("dimension", dimension);
+    });
+  ')),
   
   # headerPanel("Color plots"),
   sidebarLayout(position = "right",
     sidebarPanel(
       h3("Color plots"),
-      selectInput("color", "Select color", choices = nms, selected = "Library"),
+      selectInput("color", "Select color", choices = colorList, selected = "Library"),
+      h3("Reduced dimension"),
+      selectInput("redDim", "Select reduced dimension", choices = redDimList, selected = "PCA"),
       h3("Load cluster file"),
       fileInput("inputFile", "Choose cluster RDS file", placeholder = ".rds file")
       # h3("Save plot file"),
@@ -96,17 +99,17 @@ server <- function(input, output) {
       # build graph with plotly
 
       # set colors
-      if(match(input$color, nms) > 6) {
+      if(match(input$color, colorList) > 6) {
         myColor <- assay(object, "counts")[match(input$color, as.list(rowData(object)["symbol"])[[1]]), ]
         myOpacity <- ifelse(assay(object, "counts")[match(input$color, as.list(rowData(object)["symbol"])[[1]]), ] != 0, 0.6, 0.05)
       } else {
         myOpacity <- ifelse(as.list(colData(object)[match("total_counts", names(colData(object)))])[[1]] != 0, 0.6, 0.05)
-        if(match(input$color, nms) == 4) {
+        if(match(input$color, colorList) == 4) {
           myColor <- as.list(colData(object)[match("total_counts", names(colData(object)))])[[1]]
-        } else if(match(input$color, nms) == 5) {
+        } else if(match(input$color, colorList) == 5) {
           myColor <- as.list(colData(object)[match("total_features_by_counts", names(colData(object)))])[[1]]
-        } else if(match(input$color, nms) == 6) {
-          myColor <- colSums(assay(object, "normcounts"))
+        } else if(match(input$color, colorList) == 6) {
+          myColor <- colSums(assay(object, "logcounts"))
         } else {
           myColor <- as.list(colData(object)[match(input$color, names(colData(object)))])[[1]]
         }
